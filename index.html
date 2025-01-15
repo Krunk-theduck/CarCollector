@@ -1,22 +1,158 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Firebase Authentication</title>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Login</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <link src="src/styles.css" rel="stylesheet"/>
 </head>
 <body>
-  <form id="signup-form">
-    <div>
-      <label for="email">Email:</label>
-      <input type="email" id="email" name="email" required>
+    <canvas id="particles"></canvas>
+    <div class="container">
+        <h1 class="form-title">Welcome Back</h1>
+        <form id="authForm">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required>
+            </div>
+            <div id="errorMessage" class="error-message"></div>
+            <button type="submit" class="btn" id="submitBtn">Sign In</button>
+        </form>
+        <div class="toggle-form">
+            <span id="toggleText">Don't have an account?</span>
+            <a id="toggleMode">Sign Up</a>
+        </div>
     </div>
-    <div>
-      <label for="password">Password:</label>
-      <input type="password" id="password" name="password" required>
-    </div>
-    <button type="submit" id="signUp">Sign Up</button>
-  </form>
-    <script type="module" src="src/main.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAT8lAk-MzVwnSdSyu8dZhCuuNUDkhaq0o",
+            authDomain: "car-collectors-49072.firebaseapp.com",
+            projectId: "car-collectors-49072",
+            storageBucket: "car-collectors-49072.firebasestorage.app",
+            messagingSenderId: "94851011167",
+            appId: "1:94851011167:web:3866a680a9d5046fe7c1ea",
+            measurementId: "G-B3WRJXQQ0G"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // Animation setup
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2;
+                this.speedX = Math.random() * 3 - 1.5;
+                this.speedY = Math.random() * 3 - 1.5;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+
+            draw() {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < 100; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (let particle of particles) {
+                particle.update();
+                particle.draw();
+            }
+            
+            requestAnimationFrame(animateParticles);
+        }
+
+        initParticles();
+        animateParticles();
+
+        // Auth functionality
+        let isSignUp = false;
+        const form = document.getElementById('authForm');
+        const toggleMode = document.getElementById('toggleMode');
+        const toggleText = document.getElementById('toggleText');
+        const submitBtn = document.getElementById('submitBtn');
+        const formTitle = document.querySelector('.form-title');
+        const errorMessage = document.getElementById('errorMessage');
+
+        function updateFormUI() {
+            formTitle.textContent = isSignUp ? 'Create Account' : 'Welcome Back';
+            submitBtn.textContent = isSignUp ? 'Sign Up' : 'Sign In';
+            toggleText.textContent = isSignUp ? 'Already have an account?' : 'Don't have an account?';
+            toggleMode.textContent = isSignUp ? 'Sign In' : 'Sign Up';
+        }
+
+        toggleMode.addEventListener('click', () => {
+            isSignUp = !isSignUp;
+            updateFormUI();
+            errorMessage.textContent = '';
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                if (isSignUp) {
+                    await auth.createUserWithEmailAndPassword(email, password);
+                } else {
+                    await auth.signInWithEmailAndPassword(email, password);
+                }
+                // Redirect or handle successful auth
+                console.log('Success!');
+            } catch (error) {
+                errorMessage.textContent = error.message;
+            }
+        });
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // Redirect to dashboard or home page
+                console.log('User is signed in:', user);
+            }
+        });
+    </script>
 </body>
 </html>
